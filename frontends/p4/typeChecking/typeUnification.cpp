@@ -324,10 +324,12 @@ bool TypeUnification::unify(const IR::Node* errorPosition,
                 return false;
             }
 
-            if (tpl->components.size() == 0) {
-                const_cast<IR::Type_Tuple*>(tpl)->components.resize(strct->fields.size());
+            if (tpl->components.size() == 0 && strct->fields.size() != 0) {
+                // const_cast<IR::Type_Tuple*>(tpl)->components.resize(strct->fields.size());
                 for (auto f : strct->fields) {
                     // TODO FILL WITH 0
+                    auto tmptype = new IR::Type_Unknown(f->srcInfo);
+                    const_cast<IR::Type_Tuple*>(tpl)->components.push_back(tmptype);
                 }
             }
             int index = 0;
