@@ -433,6 +433,24 @@ bool ControlBodyTranslator::preorder(const IR::SwitchStatement* statement) {
     return false;
 }
 
+bool ControlBodyTranslator::preorder(const IR::AssertStatement* statement) {
+    // Generatirg code like if(cond==false) errorVar=assertError; reject;
+    CHECK_NULL(statement);
+    builder->append("/* assert() */");
+    builder->newline();
+    builder->append("if(");
+    visit(statement->expression);  // condition
+    builder->append("== false)");
+    builder->blockStart();
+    builder->emitIndent();
+    builder->appendFormat("% s=% s;", control->program->errorVar.c_str(), p4lib.assertError);
+    builder->newline();
+    builder->emitIndent();
+    builder->appendFormat("goto %s;", IR::ParserState::reject.c_str());
+    builder->newline();
+    builder->blockEnd(true);
+    return false;
+}
 /////////////////////////////////////////////////
 
 EBPFControl::EBPFControl(const EBPFProgram* program, const IR::ControlBlock* block,

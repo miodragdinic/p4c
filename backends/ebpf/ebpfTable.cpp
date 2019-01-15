@@ -59,6 +59,29 @@ class ActionTranslationVisitor : public CodeGenInspector {
         visit(action->body);
         return false;
     }
+
+    bool preorder(const IR::AssertStatement* statement) {
+        CHECK_NULL(statement->expression);
+        builder->append("/* assert() */");
+        builder->newline();
+
+        builder->append("if(");
+
+        visit(statement->expression);  // condition
+        builder->append("== false)");
+        builder->blockStart();
+
+        builder->emitIndent();
+        builder->appendFormat("% s=% s;",
+            program->errorVar.c_str(), P4::P4CoreLibrary::instance.assertError);
+        builder->newline();
+
+        builder->emitIndent();
+        builder->appendFormat("goto %s;", IR::ParserState::reject.c_str());
+        builder->newline();
+        builder->blockEnd(true);
+        return false;
+    }
 };  // ActionTranslationVisitor
 }  // namespace
 

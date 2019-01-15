@@ -791,6 +791,16 @@ SimpleSwitchBackend::convertChecksum(const IR::BlockStatement *block, Util::Json
                     continue;
                 }
             }
+        } else if (auto as = stat->to<IR::AssertStatement>()) {
+            // ASSERT in verifyChecksum control block
+            // (not sure what to generate for bmv2)
+            auto cond = conv->convert(as->expression, true, false);
+            auto assert = new Util::JsonObject();
+            assert->emplace("op", "assert");  // TODO - FINISH THIS CODE GEN
+            assert->emplace_non_null("source_info", stat->sourceInfoJsonObj());
+            assert->emplace("if_cond", cond);
+            checksums->append(assert);
+            continue;
         }
         ::error("%1%: Only calls to %2% or %3% allowed", stat,
                 verify ? v1model.verify_checksum.name : v1model.update_checksum.name,

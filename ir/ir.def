@@ -595,4 +595,15 @@ class ToplevelBlock : Block, IDeclaration {
     validate { BUG_CHECK(node->is<IR::P4Program>(), "%1%: expected a P4Program", node); }
 }
 
+class AssertStatement : Statement {
+    Expression expression;
+#nodbprint
+}
+
+class AssertInParserStatement : MethodCallStatement {
+   
+    AssertInParserStatement(MethodCallExpression call, Util::SourceInfo srcInfo)
+        : MethodCallStatement(srcInfo,call) { }
+#nodbprint
+}
 /** @} *//* end group irdefs */

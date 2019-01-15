@@ -128,6 +128,26 @@ void ActionConverter::convertActionBody(const IR::Vector<IR::StatOrDecl>* body,
                     result->append(json);
                 continue;
             }
+        } else if (s->is<IR::AssertStatement>()) {  // FIX THIS CODE GEN
+            LOG3("Visit " << dbp(s));
+            auto as = s->to<IR::AssertStatement>();
+            // Generating Assert as exit statement with condition
+            // NOT SURE IT WILL BE CORRECT FOR BMV2
+            auto primitive = mkPrimitive("exit", result);
+            auto parameters = mkParameters(primitive);
+            primitive->emplace("type", "expression");
+            auto e = new Util::JsonObject();
+            primitive->emplace("value", e);
+            e->emplace("op", "?");
+            auto expr = ctxt->conv->convert(as->expression, true, false);
+            CHECK_NULL(expr);
+            e->emplace("left", "null");
+            auto right = new Util::JsonObject();
+            e->emplace("right", ctxt->conv->fixLocal(right));
+            right->emplace("type", "expression");
+            e->emplace("cond", ctxt->conv->fixLocal(expr));
+            primitive->emplace_non_null("source_info", s->sourceInfoJsonObj());
+            continue;
         }
         ::error("%1%: not yet supported on this target", s);
     }

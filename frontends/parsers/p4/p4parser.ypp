@@ -192,7 +192,7 @@ inline std::ostream& operator<<(std::ostream& out, const P4::Token& t) {
 %token<Token>      ABSTRACT ACTION ACTIONS APPLY BOOL BIT CONST CONTROL DEFAULT
                    ELSE ENTRIES ENUM ERROR EXIT EXTERN HEADER HEADER_UNION IF IN INOUT
                    INT KEY SELECT MATCH_KIND TYPE OUT PACKAGE PARSER PRAGMA RETURN STATE
-                   STRUCT SWITCH TABLE TRANSITION TUPLE TYPEDEF VARBIT VALUESET VOID
+                   STRUCT SWITCH TABLE TRANSITION TUPLE TYPEDEF VARBIT VALUESET VOID ASSERT
 
 %token<cstring> IDENTIFIER TYPE_IDENTIFIER STRING_LITERAL
 %token<UnparsedConstant>  INTEGER
@@ -230,7 +230,7 @@ inline std::ostream& operator<<(std::ostream& out, const P4::Token& t) {
 %type<IR::Statement*>       statement emptyStatement returnStatement
                             switchStatement exitStatement
                             assignmentOrMethodCallStatement conditionalStatement
-                            directApplication
+                            directApplication assertStatement parserAssertStatement
 %type<IR::BlockStatement*>  blockStatement parserBlockStatement controlBody
                             objInitializer
 %type<IR::StatOrDecl*>      statementOrDeclaration parserStatement
@@ -682,6 +682,7 @@ parserStatement
     | variableDeclaration             { $$ = $1; }
     | constantDeclaration             { $$ = $1; }
     | parserBlockStatement            { $$ = $1; }
+    | parserAssertStatement           { $$ = $1; }
     ;
 
 parserBlockStatement
@@ -752,6 +753,19 @@ valueSetDeclaration
         { $$ = new IR::P4ValueSet(@9, *$9, $1, $4, $7); }
     ;
 
+parserAssertStatement
+    : ASSERT "(" expression ")" ";"   {
+      auto typeName = new IR::Type_Name(@1, new IR::Path(IR::ID(@1, "error"))); //trying to represent assert like verify statement
+      auto member = new IR::Member(@1+@4, new IR::TypeNameExpression(@1+@3, typeName),IR::ID(@1,"AssertError"));
+      auto args=new IR::Vector<IR::Argument>();
+      args->push_back(new IR::Argument(@3,$3));
+      args->push_back(new IR::Argument(@3,member));
+      auto mc = new IR::MethodCallExpression(@1 + @4, new IR::PathExpression(IR::ID(IR::ParserState::verify)), args);
+      //$$ = new IR::MethodCallStatement(@1 + @4, mc);
+      //auto mcs=new IR::MethodCallStatement(@1 + @4, mc);
+      $$ = new IR::AssertInParserStatement(@1+@4, mc);
+    }
+    ;
 /*************************** CONTROL ************************/
 
 controlDeclaration
@@ -1072,6 +1086,7 @@ statement
     | returnStatement                  { $$ = $1; }
     | exitStatement                    { $$ = $1; }
     | switchStatement                  { $$ = $1; }
+    | assertStatement                  { $$ = $1; }
     ;
 
 blockStatement
@@ -1111,7 +1126,9 @@ statementOrDeclaration
     | statement                { $$ = $1; }
     | instantiation            { $$ = $1; }
     ;
-
+assertStatement
+    : ASSERT "(" expression ")" ";"    { $$ = new IR::AssertStatement(@1+@4,$3); }
+    ;
 /************************* TABLE *********************************/
 
 tableDeclaration

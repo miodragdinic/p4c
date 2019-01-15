@@ -66,6 +66,12 @@ void DeparserConverter::convertDeparserBody(const IR::Vector<IR::StatOrDecl>* bo
                     continue;
                 }
             }
+        } else if (s->is<IR::AssertStatement>()) {
+            // ASSERT in deparser - CODE GEN (just to try)
+            // TODO - FInish this generating
+            auto as = s->to<IR::AssertStatement>();
+            auto cond = ctxt->conv->convert(as->expression);
+            continue;
         }
         ::error("%1%: not supported with a deparser on this target", s);
     }

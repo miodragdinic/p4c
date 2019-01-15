@@ -306,14 +306,14 @@ bool StateTranslationVisitor::preorder(const IR::MethodCallExpression* expressio
     builder->append("/* ");
     visit(expression->method);
     builder->append("(");
-    bool first = true;
-    for (auto a  : *expression->arguments) {
-        if (!first)
-            builder->append(", ");
-        first = false;
-        visit(a);
-    }
-    builder->append(")");
+    // bool first = true;
+    // for (auto a  : *expression->arguments) {
+    //     if (!first)
+    //         builder->append(", ");
+    //     first = false;
+    //     visit(a);
+    // }
+    // builder->append(")");
     builder->append("*/");
     builder->newline();
 
@@ -335,7 +335,44 @@ bool StateTranslationVisitor::preorder(const IR::MethodCallExpression* expressio
             BUG("Unhandled packet method %1%", expression->method);
             return false;
         }
-    }
+    } else if (mi->is<P4::ExternFunction>()) {
+        auto func = mi->to<P4::ExternFunction>();
+        if (func->method->name.name == IR::ParserState::verify) {
+            BUG_CHECK(expression->arguments->size() == 2,
+                "%1%: Expected two arguments ", expression);
+            builder->append("if(");
+            auto cond = expression->arguments->at(0);
+            visit(cond->expression);  // condition
+            builder->append("== false)");
+            builder->blockStart();
+            builder->emitIndent();
+            auto error = expression->arguments->at(1);
+            visit(error->expression);
+            builder->newline();
+            builder->emitIndent();
+            builder->appendFormat("goto %s;", IR::ParserState::reject.c_str());
+            builder->newline();
+            builder->blockEnd(true);
+            return false;
+        }
+    } else if (mi->is<P4::BuiltInMethod>()) {
+    // Added this because compiler didn't recognise assert(hdr.ethernet.isValid()), for expample
+        auto bim = mi->to<P4::BuiltInMethod>();
+        builder->emitIndent();
+        if (bim->name == IR::Type_Header::isValid) {
+            visit(bim->appliedTo);
+            builder->append(".ebpf_valid");
+            return false;
+        } else if (bim->name == IR::Type_Header::setValid) {
+            visit(bim->appliedTo);
+            builder->append(".ebpf_valid = true");
+            return false;
+        } else if (bim->name == IR::Type_Header::setInvalid) {
+            visit(bim->appliedTo);
+            builder->append(".ebpf_valid = false");
+            return false;
+        }
+     }
 
     ::error("Unexpected method call in parser %1%", expression);
     return false;
