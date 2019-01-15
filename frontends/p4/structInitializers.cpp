@@ -76,8 +76,22 @@ convert(const IR::Expression* expression, const IR::Type* type) {
 }
 
 const IR::Node* CreateStructInitializers::postorder(IR::AssignmentStatement* statement) {
-    auto type = typeMap->getType(statement->left);
-    auto init = convert(statement->right, type);
+    auto ltype = typeMap->getType(statement->left);
+    auto init = convert(statement->right, ltype);
+    if (ltype->is<IR::Type_StructLike>()) {
+        auto retval = new IR::IndexedVector<IR::StatOrDecl>();
+        auto strct = ltype->to<IR::Type_StructLike>();
+        if (auto list = statement->right->to<IR::ListExpression>()) {
+            if (list->components.size() == 0 && strct->fields.size() != 0) {
+                for (auto f : strct->fields) {
+                    auto expr = new IR::Constant(0, 10);
+                    auto left = new IR::Member(statement->left, f->name);
+                    retval->push_back(new IR::AssignmentStatement(statement->srcInfo, left, expr));
+                }
+                return new IR::BlockStatement(statement->srcInfo, *retval);
+            }
+        }
+    }
     if (init != statement->right)
         statement->right = init;
     return statement;

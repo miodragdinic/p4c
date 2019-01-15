@@ -315,7 +315,7 @@ bool TypeUnification::unify(const IR::Node* errorPosition,
     } else if (dest->is<IR::Type_Struct>() || dest->is<IR::Type_Header>()) {
         auto strct = dest->to<IR::Type_StructLike>();
         if (auto tpl = src->to<IR::Type_Tuple>()) {
-            if (strct->fields.size() != tpl->components.size()) {
+            if ( (strct->fields.size() != tpl->components.size()) && tpl->components.size() != 0 ) {
                 if (reportErrors)
                     ::error("%1%: Number of fields %2% in initializer different "
                             "than number of fields in structure %3%: %4% to %5%",
@@ -324,6 +324,12 @@ bool TypeUnification::unify(const IR::Node* errorPosition,
                 return false;
             }
 
+            if (tpl->components.size() == 0) {
+                const_cast<IR::Type_Tuple*>(tpl)->components.resize(strct->fields.size());
+                for (auto f : strct->fields) {
+                    // TODO FILL WITH 0
+                }
+            }
             int index = 0;
             for (const IR::StructField* f : strct->fields) {
                 const IR::Type* tplField = tpl->components.at(index);
