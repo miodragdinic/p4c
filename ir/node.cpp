@@ -87,19 +87,25 @@ Util::JsonObject* IR::Node::sourceInfoJsonObj() const {
     unsigned lineNumber, columnNumber;
     cstring fName = prepareSourceInfoForJSON(si, &lineNumber, &columnNumber);
     if (fName == nullptr) {
-        // Do not add anything to the bmv2 JSON file for this, as this
-        // is likely a statement synthesized by the compiler, and
-        // either not easy, or it is impossible, to correlate it
-        // directly with anything in the user's P4 source code.
-        return nullptr;
+        if (si.line == -1) {
+            return nullptr;
+        } else {
+            // SourceInfo created from "Source_info:" read from jsonFile dumped after midEnd
+            auto json1 = new Util::JsonObject();
+            json1->emplace("filename", srcInfo.filename);
+            json1->emplace("line", srcInfo.line);
+            json1->emplace("column", srcInfo.column);
+            json1->emplace("source_fragment", srcInfo.srcBrief);
+            return json1;
+        }
+    } else {
+        auto json = new Util::JsonObject();
+        json->emplace("filename", fName);
+        json->emplace("line", lineNumber);
+        json->emplace("column", columnNumber);
+        json->emplace("source_fragment", si.toBriefSourceFragment());
+        return json;
     }
-
-    auto json = new Util::JsonObject();
-    json->emplace("filename", fName);
-    json->emplace("line", lineNumber);
-    json->emplace("column", columnNumber);
-    json->emplace("source_fragment", si.toBriefSourceFragment());
-    return json;
 }
 
 void IR::Node::sourceInfoToJSON(JSONGenerator &json) const {

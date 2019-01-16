@@ -68,11 +68,19 @@ class JSONLoader {
         int id = json->to<JsonObject>()->get_id();
         if (id >= 0) {
             if (node_refs.find(id) == node_refs.end()) {
-                if (auto fn = get(IR::unpacker_table, json->to<JsonObject>()->get_type()))
-                    node_refs[id] = fn(*this);
-                else
-                    return nullptr; }  // invalid json exception?
-            return node_refs[id]; }
+                if (auto fn = get(IR::unpacker_table, json->to<JsonObject>()->get_type())) {
+                        node_refs[id] = fn(*this);
+                        JsonObject* obj = new JsonObject(json->to<JsonObject>()->get_sourceJson());
+                        if (obj->hasSrcInfo() == true) {
+                                node_refs[id]->srcInfo = Util::SourceInfo(obj->get_filename(), \
+                                    obj->get_line(), obj->get_column(), obj->get_sourceFragment());
+                        }
+                    } else {
+                        return nullptr;
+                    }  // invalid json exception?
+            }
+            return node_refs[id];
+        }
         return nullptr;  // invalid json exception?
     }
 
