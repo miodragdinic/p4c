@@ -3393,4 +3393,15 @@ const IR::Node* TypeInference::postorder(IR::AssertStatement* statement) {
                   statement, type->toString());
     return statement;
 }
+
+const IR::Node* TypeInference::postorder(IR::AssumeStatement* statement) {
+    LOG3("TI Visiting " << dbp(getOriginal()));
+    auto type = getType(statement->expression);
+    if (type == nullptr)
+        return statement;
+    if (!type->is<IR::Type_Boolean>())
+        typeError("Condition of %1% dose not evaluate to a bool but %2%",
+                 statement, type->toString());
+    return statement;
+}
 }  // namespace P4

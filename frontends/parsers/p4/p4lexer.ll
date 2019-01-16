@@ -143,6 +143,7 @@ using Parser = P4::P4Parser;
 "void"          { BEGIN(driver.saveState); return makeToken(VOID); }
 "_"             { BEGIN(driver.saveState); return makeToken(DONTCARE); }
 "assert"        { BEGIN(driver.saveState); return makeToken(ASSERT); }
+"assume"        { BEGIN(driver.saveState); return makeToken(ASSUME); }
 [A-Za-z_][A-Za-z0-9_]* {
                   BEGIN(driver.saveState);
                   cstring name = yytext;

@@ -72,7 +72,13 @@ void DeparserConverter::convertDeparserBody(const IR::Vector<IR::StatOrDecl>* bo
             auto as = s->to<IR::AssertStatement>();
             auto cond = ctxt->conv->convert(as->expression);
             continue;
-        }
+        } else if (s->is<IR::AssumeStatement>()) {
+            // ASSUME in deparser - CODE GEN (just to try)
+            // TODO - FInish this generating
+            auto ass = s->to<IR::AssumeStatement>();
+            auto cond = ctxt->conv->convert(ass->expression);
+            continue;
+         }
         ::error("%1%: not supported with a deparser on this target", s);
     }
     ctxt->conv->simpleExpressionsOnly = false;

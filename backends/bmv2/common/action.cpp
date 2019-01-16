@@ -148,7 +148,26 @@ void ActionConverter::convertActionBody(const IR::Vector<IR::StatOrDecl>* body,
             e->emplace("cond", ctxt->conv->fixLocal(expr));
             primitive->emplace_non_null("source_info", s->sourceInfoJsonObj());
             continue;
-        }
+        } else if (s->is<IR::AssumeStatement>()) {
+            // FIX THIS CODE GEN, beacuse I think this will not work in behavioral model
+            // behavioral model has exit operation, but I'm not sure for exit with condition
+            LOG3("Visit " << dbp(s));
+            auto as = s->to<IR::AssumeStatement>();
+            auto primitive = mkPrimitive("exit", result);
+            primitive->emplace("type", "expression");
+            auto e = new Util::JsonObject();
+            primitive->emplace("value", e);
+            e->emplace("op", "?");
+            auto expr = ctxt->conv->convert(as->expression, true, false);
+            CHECK_NULL(expr);
+            auto left = new Util::JsonObject();
+            e->emplace("left", ctxt->conv->fixLocal(left));
+            left->emplace("type", "expression");
+            e->emplace("right", "null");
+            e->emplace("cond", ctxt->conv->fixLocal(expr));
+            primitive->emplace_non_null("source_info", s->sourceInfoJsonObj());
+            continue;
+         }
         ::error("%1%: not yet supported on this target", s);
     }
 }

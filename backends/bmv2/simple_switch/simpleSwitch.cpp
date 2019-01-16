@@ -801,7 +801,15 @@ SimpleSwitchBackend::convertChecksum(const IR::BlockStatement *block, Util::Json
             assert->emplace("if_cond", cond);
             checksums->append(assert);
             continue;
-        }
+        } else if (auto assumeStatement = stat->to<IR::AssumeStatement>()) {
+            auto cond = conv->convert(assumeStatement->expression, true, false);
+            auto assume = new Util::JsonObject();
+            assume->emplace("op", "assume");  // TODO -FINISH THIS CODE GEN
+            assume->emplace_non_null("source_info", stat->sourceInfoJsonObj());
+            assume->emplace("if_cond", cond);
+            checksums->append(assume);
+            continue;
+         }
         ::error("%1%: Only calls to %2% or %3% allowed", stat,
                 verify ? v1model.verify_checksum.name : v1model.update_checksum.name,
                 verify ? v1model.verify_checksum_with_payload.name :

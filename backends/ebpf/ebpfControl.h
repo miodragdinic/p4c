@@ -47,6 +47,7 @@ class ControlBodyTranslator : public CodeGenInspector {
     bool preorder(const IR::IfStatement* statement) override;
     bool preorder(const IR::SwitchStatement* statement) override;
     bool preorder(const IR::AssertStatement* statement) override;
+    bool preorder(const IR::AssumeStatement* statement) override;
 };
 
 class EBPFControl : public EBPFObject {

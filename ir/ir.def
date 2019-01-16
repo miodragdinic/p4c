@@ -606,4 +606,19 @@ class AssertInParserStatement : MethodCallStatement {
         : MethodCallStatement(srcInfo,call) { }
 #nodbprint
 }
+
+class AssumeInParserStatement : MethodCallStatement {
+    
+    AssumeInParserStatement(MethodCallExpression call, Util::SourceInfo srcInfo)
+        : MethodCallStatement(srcInfo,call) { }
+#nodbprint
+}
+
+class AssumeStatement : Statement {
+    Expression expression;
+    visit_children {
+        v.visit(expression, "expression");
+    }
+#nodbprint
+}
 /** @} *//* end group irdefs */
