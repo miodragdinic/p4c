@@ -26,7 +26,7 @@ namespace BMV2 {
 
 class SimpleSwitchMidEnd : public MidEnd {
  public:
-    explicit SimpleSwitchMidEnd(CompilerOptions& options);
+    explicit SimpleSwitchMidEnd(CompilerOptions& options, bool fromJson);
 };
 
 }  // namespace BMV2

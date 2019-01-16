@@ -24,12 +24,17 @@ class EbpfOptions : public CompilerOptions {
  public:
     // file to output to
     cstring outputFile = nullptr;
+    // read from json
+    bool fromJson = false;
 
     EbpfOptions() {
         langVersion = CompilerOptions::FrontendVersion::P4_16;
         registerOption("-o", "outfile",
                 [this](const char* arg) { outputFile = arg; return true; },
                 "Write output to outfile");
+        registerOption("--fromJSON", nullptr,
+                [this](const char* ) { fromJson = true; return true; },
+                "Use IR representation from JsonFile dumped previously.");
     }
 };
 

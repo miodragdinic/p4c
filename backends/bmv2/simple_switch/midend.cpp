@@ -57,7 +57,7 @@ limitations under the License.
 
 namespace BMV2 {
 
-SimpleSwitchMidEnd::SimpleSwitchMidEnd(CompilerOptions& options) : MidEnd(options) {
+SimpleSwitchMidEnd::SimpleSwitchMidEnd(CompilerOptions& options, bool fromJson) : MidEnd(options) {
     auto evaluator = new P4::EvaluatorPass(&refMap, &typeMap);
     auto convertEnums = new P4::ConvertEnums(&refMap, &typeMap, new EnumOn32Bits("v1model.p4"));
     addPasses({
@@ -65,8 +65,14 @@ SimpleSwitchMidEnd::SimpleSwitchMidEnd(CompilerOptions& options) : MidEnd(option
         new P4::EliminateNewtype(&refMap, &typeMap),
         new P4::EliminateSerEnums(&refMap, &typeMap),
         new P4::RemoveActionParameters(&refMap, &typeMap),
-        convertEnums,
-        new VisitFunctor([this, convertEnums]() { enumMap = convertEnums->getEnumMapping(); }),
+    });
+    if (fromJson == false) {
+        addPasses({
+            convertEnums,
+            new VisitFunctor([this, convertEnums]() { enumMap = convertEnums->getEnumMapping(); }),
+        });
+    }
+    addPasses({
         new P4::OrderArguments(&refMap, &typeMap),
         new P4::TypeChecking(&refMap, &typeMap),
         new P4::SimplifyKey(&refMap, &typeMap,

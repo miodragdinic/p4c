@@ -100,21 +100,22 @@ int main(int argc, char *const argv[]) {
             error("Can't open %s", options.file); }
     } else {
         program = P4::parseP4File(options);
-    }
-    auto hook = options.getDebugHook();
 
-    if (program != nullptr && ::errorCount() == 0) {
-        P4::P4COptionPragmaParser optionsPragmaParser;
-        program->apply(P4::ApplyOptionsPragmas(optionsPragmaParser));
+        auto hook = options.getDebugHook();
 
-        if (!options.parseOnly) {
-            try {
-                P4::FrontEnd fe;
-                fe.addDebugHook(hook);
-                program = fe.run(options, program);
-            } catch (const Util::P4CExceptionBase &bug) {
-                std::cerr << bug.what() << std::endl;
-                return 1;
+        if (program != nullptr && ::errorCount() == 0) {
+            P4::P4COptionPragmaParser optionsPragmaParser;
+            program->apply(P4::ApplyOptionsPragmas(optionsPragmaParser));
+
+            if (!options.parseOnly) {
+                try {
+                    P4::FrontEnd fe;
+                    fe.addDebugHook(hook);
+                    program = fe.run(options, program);
+                } catch (const Util::P4CExceptionBase &bug) {
+                    std::cerr << bug.what() << std::endl;
+                    return 1;
+                }
             }
         }
         log_dump(program, "Initial program");

@@ -32,6 +32,8 @@ limitations under the License.
 #include "frontends/common/applyOptionsPragmas.h"
 #include "frontends/common/parseInput.h"
 #include "frontends/p4/frontend.h"
+#include "ir/json_loader.h"
+#include "fstream"
 
 void compile(EbpfOptions& options) {
     auto hook = options.getDebugHook();
@@ -40,19 +42,33 @@ void compile(EbpfOptions& options) {
         ::error("This compiler only handles P4-16");
         return;
     }
-    auto program = P4::parseP4File(options);
-    if (::errorCount() > 0)
-        return;
+    const IR::P4Program *program = nullptr;
 
-    P4::P4COptionPragmaParser optionsPragmaParser;
-    program->apply(P4::ApplyOptionsPragmas(optionsPragmaParser));
+    if (options.fromJson) {
+        std::filebuf fb;
+        if (fb.open(options.file, std::ios::in) == nullptr) {
+            ::error("%s: No such file or directory.", options.file);
+            return;
+        }
 
-    P4::FrontEnd frontend;
-    frontend.addDebugHook(hook);
-    program = frontend.run(options, program);
-    if (::errorCount() > 0)
-        return;
+        std::istream inJson(&fb);
+        JSONLoader jsonFileLoader(inJson);
+        program = new IR::P4Program(jsonFileLoader);
+        fb.close();
+    } else {
+        program = P4::parseP4File(options);
+        if (::errorCount() > 0)
+            return;
 
+        P4::P4COptionPragmaParser optionsPragmaParser;
+        program->apply(P4::ApplyOptionsPragmas(optionsPragmaParser));
+
+        P4::FrontEnd frontend;
+        frontend.addDebugHook(hook);
+        program = frontend.run(options, program);
+        if (::errorCount() > 0)
+            return;
+    }
     EBPF::MidEnd midend;
     midend.addDebugHook(hook);
     auto toplevel = midend.run(options, program);

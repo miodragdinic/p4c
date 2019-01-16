@@ -59,6 +59,9 @@ def add_developer_options(parser):
                         help="[Compiler debugging] Folder where P4 programs are dumped.")
     parser.add_argument("--toJson", dest="json", default=None,
                         help="Dump IR to JSON in the specified file.")
+    parser.add_argument("--fromJson", dest="jsonSource", default=False,
+                        help="Use IR from JSON representation dumped previously.",
+                        action="store_true")
     parser.add_argument("--pp", dest="pretty_print", default=None,
                         help="Pretty-print the program in the specified file.")
 

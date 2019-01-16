@@ -28,6 +28,8 @@ class BMV2Options : public CompilerOptions {
     bool emitExterns = false;
     // file to output to
     cstring outputFile = nullptr;
+    // read from json
+    bool fromJson = false;
 
     BMV2Options() {
         registerOption("--emit-externs", nullptr,
@@ -37,6 +39,9 @@ class BMV2Options : public CompilerOptions {
         registerOption("-o", "outfile",
                 [this](const char* arg) { outputFile = arg; return true; },
                 "Write output to outfile");
+        registerOption("--fromJSON", nullptr,
+                [this](const char* ) { fromJson = true; return true; },
+                "Use IR representation from JsonFile dumped previously.");
     }
 };
 

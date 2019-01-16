@@ -39,6 +39,7 @@ class HeaderConverter : public Inspector {
     const unsigned       boolWidth = 1;    // convert booleans to 1-bit integers
     const unsigned       errorWidth = 32;  // convert errors to 32-bit integers
     unsigned             scalars_width = 0;
+    bool                 flagFromJson = false;
 
  protected:
     Util::JsonArray* pushNewArray(Util::JsonArray* parent);
@@ -55,7 +56,8 @@ class HeaderConverter : public Inspector {
 
     bool preorder(const IR::Parameter* param) override;
 
-    HeaderConverter(ConversionContext* ctxt, cstring scalarsName);
+    HeaderConverter(ConversionContext* ctxt, cstring scalarsName, bool flag);
+    bool getFlagJson() { return flagFromJson; }
 };
 
 }  // namespace BMV2

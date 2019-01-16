@@ -30,6 +30,8 @@ limitations under the License.
 #include "graphs.h"
 #include "controls.h"
 #include "parsers.h"
+#include "ir/json_loader.h"
+#include "fstream"
 
 namespace graphs {
 
@@ -61,11 +63,16 @@ MidEnd::MidEnd(CompilerOptions& options) {
 class Options : public CompilerOptions {
  public:
     cstring graphsDir{"."};
+    // read from json
+    bool fromJson = false;
     Options() {
         registerOption("--graphs-dir", "dir",
                        [this](const char* arg) { graphsDir = arg; return true; },
                        "Use this directory to dump graphs in dot format "
                        "(default is current working directory)\n");
+        registerOption("--fromJSON", nullptr,
+                [this](const char* ) { fromJson = true; return true; },
+                "Use IR representation from JsonFile dumped previously.");
      }
 };
 
@@ -89,23 +96,38 @@ int main(int argc, char *const argv[]) {
 
     auto hook = options.getDebugHook();
 
-    auto program = P4::parseP4File(options);
-    if (program == nullptr || ::errorCount() > 0)
-        return 1;
+    const IR::P4Program *program = nullptr;
 
-    try {
-        P4::P4COptionPragmaParser optionsPragmaParser;
-        program->apply(P4::ApplyOptionsPragmas(optionsPragmaParser));
+    if (options.fromJson) {
+        std::filebuf fb;
+        if (fb.open(options.file, std::ios::in) == nullptr) {
+            ::error("%s: No such file or directory.", options.file);
+            return 1;
+        }
 
-        P4::FrontEnd fe;
-        fe.addDebugHook(hook);
-        program = fe.run(options, program);
-    } catch (const Util::P4CExceptionBase &bug) {
-        std::cerr << bug.what() << std::endl;
-        return 1;
+        std::istream inJson(&fb);
+        JSONLoader jsonFileLoader(inJson);
+        program = new IR::P4Program(jsonFileLoader);
+        fb.close();
+    } else {
+        program = P4::parseP4File(options);
+        if (program == nullptr || ::errorCount() > 0)
+            return 1;
+
+        try {
+            P4::P4COptionPragmaParser optionsPragmaParser;
+            program->apply(P4::ApplyOptionsPragmas(optionsPragmaParser));
+
+            P4::FrontEnd fe;
+            fe.addDebugHook(hook);
+            program = fe.run(options, program);
+        } catch (const Util::P4CExceptionBase &bug) {
+            std::cerr << bug.what() << std::endl;
+            return 1;
+        }
+        if (program == nullptr || ::errorCount() > 0)
+            return 1;
     }
-    if (program == nullptr || ::errorCount() > 0)
-        return 1;
 
     graphs::MidEnd midEnd(options);
     midEnd.addDebugHook(hook);

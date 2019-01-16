@@ -27,8 +27,8 @@ Util::JsonArray* HeaderConverter::pushNewArray(Util::JsonArray* parent) {
     return result;
 }
 
-HeaderConverter::HeaderConverter(ConversionContext* ctxt, cstring scalarsName)
-        : ctxt(ctxt), scalarsName(scalarsName) {
+HeaderConverter::HeaderConverter(ConversionContext* ctxt, cstring scalarsName, bool flag)
+        : ctxt(ctxt), scalarsName(scalarsName), flagFromJson(flag) {
     setName("HeaderConverter");
     CHECK_NULL(ctxt);
 }
@@ -263,7 +263,16 @@ void HeaderConverter::addHeaderType(const IR::Type_StructLike *st) {
         if (auto aliasAnnotation = f->getAnnotation("alias")) {
             auto container = new Util::JsonArray();
             auto alias = new Util::JsonArray();
-            auto target_name = aliasAnnotation->expr.front()->to<IR::StringLiteral>()->value;
+            auto target_name = "";
+            if (getFlagJson() == false) {
+                target_name = aliasAnnotation->expr.front()->to<IR::StringLiteral>()->value;
+            } else {
+                if (aliasAnnotation->body.size() != 0) {
+                    target_name = aliasAnnotation->body.at(0)->text;
+                } else {
+                    target_name = "BMV2";
+                }
+            }
             LOG2("field alias " << target_name);
             container->append(target_name);  // name on target
             // break down the alias into meta . field

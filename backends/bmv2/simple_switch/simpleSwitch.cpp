@@ -854,25 +854,48 @@ SimpleSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
     auto evaluator = new P4::EvaluatorPass(refMap, typeMap);
     auto program = tlb->getProgram();
     // These passes are logically bmv2-specific
-    PassManager simplify = {
-        new ParseAnnotations(),
-        new RenameUserMetadata(refMap, userMetaType, userMetaName),
-        new P4::ClearTypeMap(typeMap),  // because the user metadata type has changed
-        new P4::SynthesizeActions(refMap, typeMap,
-                                  new SkipControls(&structure->non_pipeline_controls)),
-        new P4::MoveActionsToTables(refMap, typeMap),
-        new P4::TypeChecking(refMap, typeMap),
-        new P4::SimplifyControlFlow(refMap, typeMap),
-        new LowerExpressions(typeMap),
-        new P4::ConstantFolding(refMap, typeMap, false),
-        new P4::TypeChecking(refMap, typeMap),
-        new RemoveComplexExpressions(refMap, typeMap,
-                                     new ProcessControls(&structure->pipeline_controls)),
-        new P4::SimplifyControlFlow(refMap, typeMap),
-        new P4::RemoveAllUnusedDeclarations(refMap),
-        evaluator,
-        new VisitFunctor([this, evaluator]() { toplevel = evaluator->getToplevelBlock(); }),
-    };
+    PassManager simplify = {};
+
+    if (getFlagJson() == false) {
+        simplify = {
+            new ParseAnnotations(),
+            new RenameUserMetadata(refMap, userMetaType, userMetaName),
+            new P4::ClearTypeMap(typeMap),  // because the user metadata type has changed
+            new P4::SynthesizeActions(refMap, typeMap,
+                                      new SkipControls(&structure->non_pipeline_controls)),
+            new P4::MoveActionsToTables(refMap, typeMap),
+            new P4::TypeChecking(refMap, typeMap),
+            new P4::SimplifyControlFlow(refMap, typeMap),
+            new LowerExpressions(typeMap),
+            new P4::ConstantFolding(refMap, typeMap, false),
+            new P4::TypeChecking(refMap, typeMap),
+            new RemoveComplexExpressions(refMap, typeMap,
+                                         new ProcessControls(&structure->pipeline_controls)),
+            new P4::SimplifyControlFlow(refMap, typeMap),
+            new P4::RemoveAllUnusedDeclarations(refMap),
+            evaluator,
+            new VisitFunctor([this, evaluator]() { toplevel = evaluator->getToplevelBlock(); }),
+        };
+    } else {
+        simplify = {
+            new RenameUserMetadata(refMap, userMetaType, userMetaName),
+            new P4::ClearTypeMap(typeMap),  // because the user metadata type has changed
+            new P4::SynthesizeActions(refMap, typeMap,
+                                      new SkipControls(&structure->non_pipeline_controls)),
+            new P4::MoveActionsToTables(refMap, typeMap),
+            new P4::TypeChecking(refMap, typeMap),
+            new P4::SimplifyControlFlow(refMap, typeMap),
+            new LowerExpressions(typeMap),
+            new P4::ConstantFolding(refMap, typeMap, false),
+            new P4::TypeChecking(refMap, typeMap),
+            new RemoveComplexExpressions(refMap, typeMap,
+                                         new ProcessControls(&structure->pipeline_controls)),
+            new P4::SimplifyControlFlow(refMap, typeMap),
+            new P4::RemoveAllUnusedDeclarations(refMap),
+            evaluator,
+            new VisitFunctor([this, evaluator]() { toplevel = evaluator->getToplevelBlock(); }),
+        };
+    }
 
     auto hook = options.getDebugHook();
     simplify.addDebugHook(hook);
@@ -923,7 +946,7 @@ SimpleSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
 
     auto ctxt = new ConversionContext(refMap, typeMap, toplevel, structure, conv, json);
 
-    auto hconv = new HeaderConverter(ctxt, scalarsName);
+    auto hconv = new HeaderConverter(ctxt, scalarsName, getFlagJson());
     program->apply(*hconv);
 
     auto pconv = new ParserConverter(ctxt);

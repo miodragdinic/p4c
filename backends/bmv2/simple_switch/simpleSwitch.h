@@ -162,7 +162,7 @@ class SimpleSwitchBackend : public Backend {
     BMV2Options&        options;
     P4V1::V1Model&      v1model;
     V1ProgramStructure* structure;
-
+    bool                flagFromJson = false;
  protected:
     cstring createCalculation(cstring algo, const IR::Expression* fields,
                               Util::JsonArray* calculations, bool usePayload, const IR::Node* node);
@@ -178,6 +178,8 @@ class SimpleSwitchBackend : public Backend {
                         P4::ConvertEnums::EnumMapping* enumMap) :
         Backend(options, refMap, typeMap, enumMap), options(options),
         v1model(P4V1::V1Model::instance) { }
+    bool getFlagJson() { return flagFromJson; }
+    void setFlagJson(bool value) { flagFromJson = value; }
 };
 
 EXTERN_CONVERTER_W_FUNCTION(clone)
